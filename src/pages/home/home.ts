@@ -15,19 +15,19 @@ export class HomePage {
   //var room = location.search && location.search.split('?')[1];
   room: string = "";
 
-  autoJoin: boolean = false;
+  autoJoin: boolean = true;
 
 
+  peer: any = null;
 
 
-  videoAlreadyExist: boolean = false;
   readyToCall: boolean = false;
   isVideoStopped: boolean = true;
   connEstablished: boolean = false;
 
   remoteVideoContainerId: string = "";
 
-  video: boolean = true;
+  video: boolean = false;
   // create our webrtc connection
   webrtc: any;
   constructor(public navCtrl: NavController) {
@@ -45,6 +45,10 @@ export class HomePage {
   }
 
   logOut() {
+
+    this.webrtc.leaveRoom();
+
+    this.webrtc.disconnect();
     this.connEstablished = false;
     this.isLoggedIn = false;
     this.room = "";
@@ -53,14 +57,29 @@ export class HomePage {
   ngAfterViewInit() {
 
   }
+  videoChangedTap() {
+    console.log("videoChangedtap")
+    this.video = !this.video;
+    this.peer.send('videoChanged', { video: this.video })
+  }
+  videoChanged() {
 
 
+    this.webrtc.config.media.video = this.video;
+
+
+    /*
+           this.webrtc.sendToAll('sendToAll videoChanged', { name: true })
+        this.webrtc.connection.emit('videoChanged');
+        */
+  }
   startVideo() {
     console.log("Button clicked")
 
-    this.webrtc.startLocalVideo();
     this.video = true;
-    this.webrtc.config.media.video = true;
+    this.webrtc.startLocalVideo();
+    //  this.webrtc.config.media.video = true;
+    //
 
 
   }
@@ -69,7 +88,7 @@ export class HomePage {
     console.log("stop Button clicked")
     this.webrtc.stopLocalVideo();
     this.video = false;
-    this.webrtc.config.media.video = false;
+    //this.webrtc.config.media.video = false;
 
 
   }
@@ -94,7 +113,7 @@ export class HomePage {
       // the id/element dom element that will hold "our" video
       localVideoEl: 'localVideo',
       // the id/element dom element that will hold remote videos
-      remoteVideosEl: '',
+      remoteVideosEl: 'remoteVideo',
       // immediately ask for camera access
       autoRequestMedia: true,
       debug: false,
@@ -126,100 +145,83 @@ export class HomePage {
 
     });
 
+    this.webrtc.on('createdPeer', (peer) => {
+      console.log("message createdPeer: ");
+
+      this.peer = peer;
+      this.connEstablished = true;
+
+    });
+
+    this.webrtc.on('connectionReady', (Sessionid) => {
+      console.log("connectionReady, sessionId: " + Sessionid);
+
+    });
+
+    //not useful
+    /*
+        this.webrtc.on('message', (message) => {
+          console.log("message: ");
+          console.log(message);
+    
+    
+        });
+    
+        this.webrtc.on('channelMessage', (message) => {
+          if (message.type != 'video') {
+            console.log("channelMessage: ");
+            console.log(message);
+          }
+        });
+    */
+
+    this.webrtc.connection.on('message', function (message) {
+      console.log("connection message: ");
+      console.log(message);
+
+      if (message.type == 'videoChanged') {
+        console.log("message recived")
+        //this.video = this.message.payload.video;
+
+      }
+
+    })
+
+
 
     // a peer video has been added
     this.webrtc.on('videoAdded', (rtcVideo, peer) => {
 
-      if (!this.webrtc.config.media.video) return;
+      // if (!this.webrtc.config.media.video) return;
       console.log('video added, peer:', peer);
       console.log('video added, video:', rtcVideo);
 
+      console.log("offet ro recive:");
+      console.log(this.webrtc.config.receiveMedia);
+      console.log("media:");
 
-      var remotes = document.querySelector('#remotes');
+      console.log(this.webrtc.config.media);
 
 
-      if (remotes) {
-        if (!this.videoAlreadyExist) {
-          var container = document.createElement('div');
-          container.className = 'videoContainer';
-          this.remoteVideoContainerId = 'container_' + this.webrtc.getDomId(peer);
-          container.id = this.remoteVideoContainerId;
-
-          container.appendChild(rtcVideo);
-          this.videoAlreadyExist = true;
-        } else {
-          let container = document.getElementById(this.remoteVideoContainerId);
-          container.appendChild(rtcVideo);
-        }
-
-        // suppress contextmenu
-        rtcVideo.oncontextmenu = () => { return false; };
-
-        // resize the video on click
-        rtcVideo.onclick = function () {
-          container.style.width = rtcVideo.videoWidth + 'px';
-          container.style.height = rtcVideo.videoHeight + 'px';
-          debugger;
-        };
-
-        // show the ice connection state
-        if (peer && peer.pc) {
-          var connstate = document.createElement('div');
-          connstate.className = 'connectionstate';
-          container.appendChild(connstate);
-          peer.pc.on('iceConnectionStateChange', (event) => {
-            switch (peer.pc.iceConnectionState) {
-              case 'checking':
-                connstate.innerText = 'Connecting to peer...';
-                break;
-              case 'connected':
-              case 'completed': // on caller side
-                // $(vol).show();
-                connstate.innerText = 'Connection established.';
-                this.connEstablished = true;
-                break;
-              case 'disconnected':
-                console.warn("Disconnected");
-                connstate.innerText = 'Disconnected.';
-                //this.logOut();
-                this.connEstablished = false;
-
-                break;
-              case 'failed':
-                console.warn("Connection failed.");
-
-                connstate.innerText = 'Connection failed.';
-                this.logOut()
-
-                break;
-              case 'closed':
-                console.warn("Connection closed.");
-
-                connstate.innerText = 'Connection closed.';
-                //this.logOut();
-
-                break;
-            }
-          });
-        } else {
-          console.log("not peer and peer.pc")
-        }
-        remotes.appendChild(container);
-      } else {
-        console.log("remotes not found");
-      }
     });
     // a peer was removed
     this.webrtc.on('videoRemoved', (video, peer) => {
+      console.log("video removed :(")
+
+
+
+      //var remoteVideo = document.getElementById('remoteVideo');
+      //debugger;
+      console.log(this.webrtc.getDomId(peer));
+      /*
+      var el = document.getElementById(peer ? 'container_' + this.webrtc.getDomId(peer) : 'localVideo');
       debugger;
-      console.log('video removed ', peer);
-      var remotes = document.getElementById('remotes');
-      //TODO check localScreenContainer
-      var el = document.getElementById(peer ? 'container_' + this.webrtc.getDomId(peer) : 'localScreenContainer');
-      if (remotes && el) {
-        remotes.removeChild(el);
-        this.videoAlreadyExist = false;
+      if (remoteVideo && el) {
+        remoteVideo.removeChild(el);
+
       }
+      */
+
     });
 
     // local p2p/ice failure

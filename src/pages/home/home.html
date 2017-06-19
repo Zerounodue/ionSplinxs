@@ -13,9 +13,10 @@
 
     <div *ngIf="isLoggedIn else loggedInIf">
         <h2>Room name: {{room}}</h2>
+        <ion-toggle checked="video" (tap)="videoChangedTap()" (ionChange)="videoChanged()"></ion-toggle>
         <div class="videoContainer">
             <!-- [ngStyle]="{'visibility': this.isLoggedIn ? 'visible': 'hidden'}"-->
-            <video id="localVideo" style="height: 150px;" oncontextmenu="return false;"></video>
+            <video id="localVideo" style="height: 150px;"></video>
             <!--<meter id="localVolume" class="volume" min="-45" max="-20" high="-25" low="-40"></meter>-->
         </div>
 
@@ -31,7 +32,11 @@
 
         <h2 *ngIf="webrtc && webrtc.roomName == room && !connEstablished">Waiting...</h2>
         <ion-spinner *ngIf="webrtc &&  webrtc.roomName == room && !connEstablished"></ion-spinner>
-        <div id="remotes"></div>
+        <div class="videoContainer">
+            <!-- [ngStyle]="{'visibility': this.isLoggedIn ? 'visible': 'hidden'}"-->
+            <div id="remoteVideo" style="height: 150px;"></div>
+            <!--<meter id="localVolume" class="volume" min="-45" max="-20" high="-25" low="-40"></meter>-->
+        </div>
     </div>
     <ng-template #loggedInIf>
         <ion-list>
@@ -41,8 +46,11 @@
             </ion-item>
             <ion-item>
                 <ion-label fixed>Auto join</ion-label>
-                <ion-toggle checked="{{autoJoin}}" (ionChange)="autoJoin= !autoJoin"></ion-toggle>
-
+                <ion-toggle checked="{{autoJoin}}" (ionChange)="autoJoin = !autoJoin"></ion-toggle>
+            </ion-item>
+            <ion-item>
+                <ion-label fixed>Video</ion-label>
+                <ion-toggle checked="{{video}}" (ionChange)="video = !video"></ion-toggle>
             </ion-item>
         </ion-list>
         <div padding>
