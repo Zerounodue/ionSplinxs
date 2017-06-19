@@ -1,14 +1,54 @@
 <ion-header>
-  <ion-navbar>
-    <ion-title>
-      Ionic Blank
-    </ion-title>
-  </ion-navbar>
+    <ion-navbar>
+        <button ion-button menuToggle icon-only>
+      <ion-icon name='menu'></ion-icon>
+    </button>
+        <ion-title>
+            Ionic Blank
+        </ion-title>
+    </ion-navbar>
 </ion-header>
 
-<ion-content padding>
-  The world is your oyster.
-  <p>
-    If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
-  </p>
+<ion-content>
+
+    <div *ngIf="isLoggedIn else loggedInIf">
+        <h2>Room name: {{room}}</h2>
+        <div class="videoContainer">
+            <!-- [ngStyle]="{'visibility': this.isLoggedIn ? 'visible': 'hidden'}"-->
+            <video id="localVideo" style="height: 150px;" oncontextmenu="return false;"></video>
+            <!--<meter id="localVolume" class="volume" min="-45" max="-20" high="-25" low="-40"></meter>-->
+        </div>
+
+
+        <div *ngIf="connEstablished">Connected</div>
+        <div *ngIf="!connEstablished">Not connected</div>
+
+
+        <button ion-button (tap)="startVideo()" *ngIf="webrtc &&  webrtc.roomName == room && !video && connEstablished">Start video</button>
+        <button ion-button (tap)="stopVideo()" *ngIf="webrtc && webrtc.roomName == room && video && connEstablished">Stop video</button>
+        <button ion-button (tap)="joinRoom()" *ngIf="webrtc && readyToCall && webrtc.roomName != room">Join room</button>
+        <button ion-button (tap)="logOut()">Log out</button>
+
+        <h2 *ngIf="webrtc && webrtc.roomName == room && !connEstablished">Waiting...</h2>
+        <ion-spinner *ngIf="webrtc &&  webrtc.roomName == room && !connEstablished"></ion-spinner>
+        <div id="remotes"></div>
+    </div>
+    <ng-template #loggedInIf>
+        <ion-list>
+            <ion-item>
+                <ion-label fixed>Room name</ion-label>
+                <ion-input type="text" value="" placeholder="enter name here" [(ngModel)]="room"></ion-input>
+            </ion-item>
+            <ion-item>
+                <ion-label fixed>Auto join</ion-label>
+                <ion-toggle checked="{{autoJoin}}" (ionChange)="autoJoin= !autoJoin"></ion-toggle>
+
+            </ion-item>
+        </ion-list>
+        <div padding>
+            <button ion-button color="primary" block (tap)="signIn()">Enter room</button>
+        </div>
+
+
+    </ng-template>
 </ion-content>
