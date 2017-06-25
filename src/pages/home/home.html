@@ -13,7 +13,7 @@
 
     <div *ngIf="isLoggedIn else loggedInIf">
         <h2>Room name: {{room}}</h2>
-        <ion-toggle checked="video" (tap)="videoChangedTap()" (ionChange)="videoChanged()"></ion-toggle>
+        <ion-toggle [(ngModel)]="video" (tap)="videoChangedTap()" (ionChange)="videoChanged()"></ion-toggle>
         <div class="videoContainer">
             <!-- [ngStyle]="{'visibility': this.isLoggedIn ? 'visible': 'hidden'}"-->
             <video id="localVideo" style="height: 150px;"></video>
@@ -25,10 +25,14 @@
         <div *ngIf="!connEstablished">Not connected</div>
 
 
-        <button ion-button (tap)="startVideo()" *ngIf="webrtc &&  webrtc.roomName == room && !video && connEstablished">Start video</button>
-        <button ion-button (tap)="stopVideo()" *ngIf="webrtc && webrtc.roomName == room && video && connEstablished">Stop video</button>
+        <button ion-button (tap)="startVideo()" *ngIf="webrtc &&  webrtc.roomName == room  && connEstablished">Start video</button>
+        <button ion-button (tap)="stopVideo()" *ngIf="webrtc && webrtc.roomName == room  && connEstablished">Stop video</button>
         <button ion-button (tap)="joinRoom()" *ngIf="webrtc && readyToCall && webrtc.roomName != room">Join room</button>
         <button ion-button (tap)="logOut()">Log out</button>
+        <button ion-button (tap)="toggleVideo()">toggle video</button>
+        <button ion-button (tap)="logVideo()">log video</button>
+
+
 
         <h2 *ngIf="webrtc && webrtc.roomName == room && !connEstablished">Waiting...</h2>
         <ion-spinner *ngIf="webrtc &&  webrtc.roomName == room && !connEstablished"></ion-spinner>

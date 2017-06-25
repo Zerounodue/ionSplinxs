@@ -19,7 +19,9 @@ export class HomePage {
 
 
   peer: any = null;
+  myUserName: string;
 
+  userTapped: boolean = false;
 
   readyToCall: boolean = false;
   isVideoStopped: boolean = true;
@@ -33,7 +35,13 @@ export class HomePage {
   constructor(public navCtrl: NavController) {
 
   }
+  toggleVideo() {
+    this.video = !this.video;
+  }
 
+  logVideo() {
+    console.log("this.vide:" + this.video)
+  }
 
   joinRoom() {
     if (this.readyToCall) {
@@ -58,25 +66,29 @@ export class HomePage {
 
   }
   videoChangedTap() {
-    console.log("videoChangedtap")
-    this.video = !this.video;
-    this.peer.send('videoChanged', { video: this.video })
+
+    this.userTapped = true;
+
   }
   videoChanged() {
-
+    //if the user tapped, send a a messag, if the user has not tapped, it recived a message.
+    if (this.userTapped) {
+      this.userTapped = false;
+      this.peer.send('videoChanged', { video: this.video })
+    }
 
     this.webrtc.config.media.video = this.video;
+    this.webrtc.webrtc.config.media.video = this.video;
 
 
-    /*
-           this.webrtc.sendToAll('sendToAll videoChanged', { name: true })
-        this.webrtc.connection.emit('videoChanged');
-        */
+
   }
   startVideo() {
-    console.log("Button clicked")
+    console.log("Button startVideo clicked, this.webrtc.config.media.video")
 
-    this.video = true;
+
+    console.log(this.webrtc.config.media.video);
+
     this.webrtc.startLocalVideo();
     //  this.webrtc.config.media.video = true;
     //
@@ -108,7 +120,7 @@ export class HomePage {
   }
 
 
-  private initWebRTC() {
+  initWebRTC() {
     this.webrtc = new SimpleWebRTC({
       // the id/element dom element that will hold "our" video
       localVideoEl: 'localVideo',
@@ -120,7 +132,7 @@ export class HomePage {
       detectSpeakingEvents: true,
       autoAdjustMic: false,
       // turn off video
-      media: { audio: true, video: this.video } // <------------- audio only
+      media: { audio: true, video: this.video } // <------------- audio only or also video?
 
     });
 
@@ -141,13 +153,17 @@ export class HomePage {
     // we did not get access to the camera
     this.webrtc.on('localMediaError', (err) => { console.error("local media error: " + err) });
     this.webrtc.on('joinedRoom', (name) => {
-      console.log("room sucessfuly joined");
+      console.log("room sucessfuly joined: " + name);
 
     });
 
     this.webrtc.on('createdPeer', (peer) => {
-      console.log("message createdPeer: ");
 
+
+      console.log("message createdPeer: " + peer);
+      console.log(peer);
+
+      //since we are connected always to maximum 1 peer, we can store it in a normal variable (instead of an array of peers)
       this.peer = peer;
       this.connEstablished = true;
 
@@ -155,6 +171,7 @@ export class HomePage {
 
     this.webrtc.on('connectionReady', (Sessionid) => {
       console.log("connectionReady, sessionId: " + Sessionid);
+      this.myUserName = Sessionid;
 
     });
 
@@ -175,17 +192,29 @@ export class HomePage {
         });
     */
 
-    this.webrtc.connection.on('message', function (message) {
-      console.log("connection message: ");
-      console.log(message);
+    this.webrtc.connection.on('message', (message) => {
+      //console.log("connection message: ");
+      //console.log(message);
+      if (message.to == this.myUserName) {
 
-      if (message.type == 'videoChanged') {
-        console.log("message recived")
-        //this.video = this.message.payload.video;
 
+        console.log("recived a message addressed to me :)");
+        if (message.type == 'videoChanged') {
+          console.log("message videoChanged recived")
+          //console.log(message);
+          //recived a message tha tells me to set the video variable to the recived value
+          console.log(message.payload.video);
+          this.video = message.payload.video;
+
+
+          //this.video = !this.video;
+          //this.peer.send('videoChanged', { video: this.video })
+
+        }
       }
 
-    })
+
+    });
 
 
 
@@ -200,7 +229,10 @@ export class HomePage {
       console.log(this.webrtc.config.receiveMedia);
       console.log("media:");
 
+      //why is this still false when the remote peer recives add
       console.log(this.webrtc.config.media);
+      console.log(this.webrtc.webrtc.config.media);
+
 
 
     });
@@ -218,7 +250,7 @@ export class HomePage {
       debugger;
       if (remoteVideo && el) {
         remoteVideo.removeChild(el);
-
+    
       }
       */
 
